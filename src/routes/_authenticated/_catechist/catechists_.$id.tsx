@@ -7,7 +7,16 @@ import {
 } from '@tanstack/react-router'
 import { useMutation, useQuery } from 'convex/react'
 import { useTranslation } from 'react-i18next'
-import { LogIn, Mail, MessageCircle, Pencil, Phone, Users } from 'lucide-react'
+import {
+  Check,
+  Copy,
+  LogIn,
+  Mail,
+  MessageCircle,
+  Pencil,
+  Phone,
+  Users,
+} from 'lucide-react'
 import { toast } from 'sonner'
 import { api } from '../../../../convex/_generated/api'
 import type { Id } from '../../../../convex/_generated/dataModel'
@@ -31,6 +40,19 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '~/components/ui/alert-dialog'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '~/components/ui/dialog'
+import { Field, FieldLabel } from '~/components/ui/field'
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput,
+} from '~/components/ui/input-group'
 
 export const Route = createFileRoute(
   '/_authenticated/_catechist/catechists_/$id',
@@ -69,6 +91,7 @@ function CatechistDetailPage() {
   const canViewSensitive = canManage || isSelf
 
   const [loginAsOpen, setLoginAsOpen] = React.useState(false)
+  const [loginIdOpen, setLoginIdOpen] = React.useState(false)
   const [isLoggingIn, setIsLoggingIn] = React.useState(false)
 
   const loginAsCatechist = useMutation(api.accountAdmin.loginAsCatechist)
@@ -200,6 +223,15 @@ function CatechistDetailPage() {
                 <p className="text-sm text-muted-foreground">
                   {t('catechists.col.memberId')}: {data.memberId}
                 </p>
+                {canViewSensitive && data.account && (
+                  <Button
+                    variant="link"
+                    className="h-auto p-0 text-sm"
+                    onClick={() => setLoginIdOpen(true)}
+                  >
+                    {t('catechists.detail.viewLoginId')}
+                  </Button>
+                )}
               </div>
             </div>
           </CardContent>
@@ -495,6 +527,47 @@ function CatechistDetailPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={loginIdOpen} onOpenChange={setLoginIdOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('catechists.detail.loginId.title')}</DialogTitle>
+          </DialogHeader>
+          {data?.account && <LoginIdField value={data.account.loginId} />}
+        </DialogContent>
+      </Dialog>
     </div>
+  )
+}
+
+function LoginIdField({ value }: { value: string }) {
+  const { t } = useTranslation()
+  const [copied, setCopied] = React.useState(false)
+
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText(value)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 1500)
+  }
+
+  return (
+    <Field>
+      <FieldLabel>{t('catechists.detail.loginId.label')}</FieldLabel>
+      <InputGroup>
+        <InputGroupInput readOnly value={value} />
+        <InputGroupAddon align="inline-end">
+          <InputGroupButton
+            aria-label={t('common.copy')}
+            onClick={() => void handleCopy()}
+          >
+            {copied ? (
+              <Check className="size-3.5" />
+            ) : (
+              <Copy className="size-3.5" />
+            )}
+          </InputGroupButton>
+        </InputGroupAddon>
+      </InputGroup>
+    </Field>
   )
 }
