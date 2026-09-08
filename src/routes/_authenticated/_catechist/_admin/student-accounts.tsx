@@ -278,6 +278,16 @@ function AdminStudentAccountsPage() {
       ),
     },
     {
+      id: 'loginId',
+      header: t('adminAccounts.col.loginId'),
+      enableSorting: false,
+      cell: ({ row }) => (
+        <span className="font-mono text-muted-foreground">
+          {row.original.account?.loginId ?? '-'}
+        </span>
+      ),
+    },
+    {
       accessorKey: 'student.fullName',
       id: 'fullName',
       header: t('students.col.fullName'),

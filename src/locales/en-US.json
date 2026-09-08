@@ -988,6 +988,7 @@
   "adminAccounts.student.title": "Student Accounts",
   "adminAccounts.student.subtitle": "Manage student login accounts and credentials",
   "adminAccounts.col.accountStatus": "Account",
+  "adminAccounts.col.loginId": "Login ID",
   "adminAccounts.status.hasAccount": "Active",
   "adminAccounts.status.noAccount": "No account",
   "adminAccounts.status.disabled": "Disabled",

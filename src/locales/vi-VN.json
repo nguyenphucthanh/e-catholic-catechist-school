@@ -989,6 +989,7 @@
   "adminAccounts.student.title": "Tài Khoản Học sinh",
   "adminAccounts.student.subtitle": "Quản lý tài khoản đăng nhập của Học sinh",
   "adminAccounts.col.accountStatus": "Tài khoản",
+  "adminAccounts.col.loginId": "Mã đăng nhập",
   "adminAccounts.status.hasAccount": "Đang hoạt động",
   "adminAccounts.status.noAccount": "Chưa có TK",
   "adminAccounts.status.disabled": "Đã khóa",

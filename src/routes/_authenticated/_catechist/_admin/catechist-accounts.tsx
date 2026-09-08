@@ -304,6 +304,16 @@ function AdminCatechistAccountsPage() {
       ),
     },
     {
+      id: 'loginId',
+      header: t('adminAccounts.col.loginId'),
+      enableSorting: false,
+      cell: ({ row }) => (
+        <span className="font-mono text-muted-foreground">
+          {row.original.account?.loginId ?? '-'}
+        </span>
+      ),
+    },
+    {
       accessorKey: 'catechist.fullName',
       id: 'fullName',
       header: t('catechists.col.fullName'),
