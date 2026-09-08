@@ -3,7 +3,15 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useMutation } from 'convex/react'
 import { useTranslation } from 'react-i18next'
 import { useForm } from '@tanstack/react-form'
-import { Edit, MoreHorizontal, Plus, Trash2, Users } from 'lucide-react'
+import {
+  Check,
+  Copy,
+  Edit,
+  MoreHorizontal,
+  Plus,
+  Trash2,
+  Users,
+} from 'lucide-react'
 import { toast } from 'sonner'
 import { z } from 'zod'
 
@@ -25,6 +33,12 @@ import {
   CardTitle,
 } from '~/components/ui/card'
 import { Field, FieldError, FieldLabel } from '~/components/ui/field'
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput,
+} from '~/components/ui/input-group'
 import {
   Select,
   SelectContent,
@@ -125,6 +139,10 @@ function CreateCatechistForm({
   const [contactDialog, setContactDialog] = React.useState<ContactDialogState>({
     mode: 'closed',
   })
+  const [credentials, setCredentials] = React.useState<{
+    catechistId: Id<'catechists'>
+    loginId: string
+  } | null>(null)
 
   const handleContactSave = (data: {
     label: string
@@ -198,7 +216,7 @@ function CreateCatechistForm({
       fullName: '',
       dateOfBirth: '',
       gender: '' as '' | 'male' | 'female',
-      role: '' as '' | 'admin' | 'user',
+      role: 'user' as '' | 'admin' | 'user',
       joinedDate: '',
       notes: '',
       title: '',
@@ -230,7 +248,7 @@ function CreateCatechistForm({
           value.hamlet ||
           value.subHamlet
 
-        const newId = await createMutation({
+        const { catechistId, loginId } = await createMutation({
           requesterId,
           fullName: value.fullName,
           saintName: value.saintName || undefined,
@@ -268,7 +286,7 @@ function CreateCatechistForm({
 
         toast.success(t('catechists.created'))
         setFormDirty(false)
-        void navigate({ to: '/catechists/$id', params: { id: newId } })
+        setCredentials({ catechistId, loginId })
       } catch (error) {
         toast.error(translateConvexError(error, t))
       }
@@ -576,6 +594,72 @@ function CreateCatechistForm({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog
+        open={credentials !== null}
+        onOpenChange={(open) => {
+          if (!open && credentials) {
+            const id = credentials.catechistId
+            setCredentials(null)
+            void navigate({ to: '/catechists/$id', params: { id } })
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {t('catechists.create.credentials.title')}
+            </DialogTitle>
+          </DialogHeader>
+          {credentials && (
+            <div className="flex flex-col gap-4">
+              <p className="text-sm text-muted-foreground">
+                {t('catechists.create.credentials.description')}
+              </p>
+              <CopyField
+                label={t('catechists.create.credentials.loginId')}
+                value={credentials.loginId}
+              />
+              <CopyField
+                label={t('catechists.create.credentials.password')}
+                value={credentials.loginId}
+              />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
+  )
+}
+
+function CopyField({ label, value }: { label: string; value: string }) {
+  const { t } = useTranslation()
+  const [copied, setCopied] = React.useState(false)
+
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText(value)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 1500)
+  }
+
+  return (
+    <Field>
+      <FieldLabel>{label}</FieldLabel>
+      <InputGroup>
+        <InputGroupInput readOnly value={value} />
+        <InputGroupAddon align="inline-end">
+          <InputGroupButton
+            aria-label={t('common.copy')}
+            onClick={() => void handleCopy()}
+          >
+            {copied ? (
+              <Check className="size-3.5" />
+            ) : (
+              <Copy className="size-3.5" />
+            )}
+          </InputGroupButton>
+        </InputGroupAddon>
+      </InputGroup>
+    </Field>
   )
 }

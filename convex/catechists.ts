@@ -714,7 +714,7 @@ type CatechistCoreFields = {
 async function insertCatechistRecord(
   ctx: MutationCtx,
   fields: CatechistCoreFields,
-): Promise<Id<'catechists'>> {
+): Promise<{ catechistId: Id<'catechists'>; loginId: string }> {
   const memberId = (await nextCounter(ctx, 'catechist')).toString()
   const catechistId = await ctx.db.insert('catechists', {
     ...fields,
@@ -734,7 +734,7 @@ async function insertCatechistRecord(
     isDeleted: false,
   })
 
-  return catechistId
+  return { catechistId, loginId }
 }
 
 export const create = mutation({
@@ -755,7 +755,8 @@ export const create = mutation({
   handler: async (ctx, args) => {
     await assertAdminRole(ctx, args.requesterId)
     const { requesterId, ...fields } = args
-    return insertCatechistRecord(ctx, fields)
+    const { catechistId } = await insertCatechistRecord(ctx, fields)
+    return catechistId
   },
 })
 
@@ -803,7 +804,7 @@ export const createWithDetails = mutation({
         : contact,
     )
 
-    const catechistId = await insertCatechistRecord(ctx, fields)
+    const { catechistId, loginId } = await insertCatechistRecord(ctx, fields)
 
     if (address) {
       await ctx.db.insert('catechistAddresses', {
@@ -831,7 +832,7 @@ export const createWithDetails = mutation({
       )
     }
 
-    return catechistId
+    return { catechistId, loginId }
   },
 })
 

@@ -1208,12 +1208,15 @@ describe('auto-account creation', () => {
       })
     })
 
-    const newId = await t.mutation(api.catechists.createWithDetails, {
-      requesterId: adminId,
-      fullName: 'Detailed Catechist',
-      role: 'user',
-      address: { country: 'VN' },
-    })
+    const { catechistId: newId } = await t.mutation(
+      api.catechists.createWithDetails,
+      {
+        requesterId: adminId,
+        fullName: 'Detailed Catechist',
+        role: 'user',
+        address: { country: 'VN' },
+      },
+    )
 
     const newCatechist = await t.run(async (ctx) =>
       ctx.db.get('catechists', newId),
@@ -1961,31 +1964,34 @@ describe('createWithDetails contact normalization', () => {
       })
     })
 
-    const newId = await t.mutation(api.catechists.createWithDetails, {
-      requesterId: adminId,
-      fullName: 'Multi Contact',
-      role: 'user',
-      contacts: [
-        {
-          label: 'Phone 1',
-          contactType: 'phone',
-          value: '0912345671',
-          isPrimary: true,
-        },
-        {
-          label: 'Phone 2',
-          contactType: 'phone',
-          value: '0912345672',
-          isPrimary: true,
-        },
-        {
-          label: 'Email',
-          contactType: 'email',
-          value: 'multi@example.com',
-          isPrimary: true,
-        },
-      ],
-    })
+    const { catechistId: newId } = await t.mutation(
+      api.catechists.createWithDetails,
+      {
+        requesterId: adminId,
+        fullName: 'Multi Contact',
+        role: 'user',
+        contacts: [
+          {
+            label: 'Phone 1',
+            contactType: 'phone',
+            value: '0912345671',
+            isPrimary: true,
+          },
+          {
+            label: 'Phone 2',
+            contactType: 'phone',
+            value: '0912345672',
+            isPrimary: true,
+          },
+          {
+            label: 'Email',
+            contactType: 'email',
+            value: 'multi@example.com',
+            isPrimary: true,
+          },
+        ],
+      },
+    )
 
     const contacts = await t.query(api.catechists.getMyContacts, {
       requesterId: adminId,
@@ -2016,11 +2022,14 @@ describe('createWithDetails contact normalization', () => {
       })
     })
 
-    const newId = await t.mutation(api.catechists.createWithDetails, {
-      requesterId: adminId,
-      fullName: 'No Extras',
-      role: 'user',
-    })
+    const { catechistId: newId } = await t.mutation(
+      api.catechists.createWithDetails,
+      {
+        requesterId: adminId,
+        fullName: 'No Extras',
+        role: 'user',
+      },
+    )
 
     const contacts = await t.query(api.catechists.getMyContacts, {
       requesterId: adminId,
