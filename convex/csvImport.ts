@@ -300,6 +300,7 @@ export const internalBulkImportCatechistsBatch = internalMutation({
           passwordHash,
           accountType: 'catechist',
           userRefId: catechistId,
+          mustChangePassword: true,
           isActive: true,
           createdAt: Date.now(),
           isDeleted: false,

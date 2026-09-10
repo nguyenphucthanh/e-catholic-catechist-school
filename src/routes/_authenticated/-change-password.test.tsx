@@ -254,4 +254,41 @@ describe('ChangePasswordPage component', () => {
     })
     expect(mockChangePw).not.toHaveBeenCalled()
   })
+
+  test('renders force change password alert when user.mustChangePassword is true', () => {
+    setupAuth({
+      user: { ...mockUser, mustChangePassword: true },
+    })
+    const ChangePasswordComponent = (Route as any).options.component
+    render(<ChangePasswordComponent />)
+
+    expect(screen.getByText('password.force.title')).toBeInTheDocument()
+    expect(screen.getByText('password.force.description')).toBeInTheDocument()
+  })
+
+  test('calls markPasswordChanged on successful password change', async () => {
+    const markPasswordChangedMock = vi.fn()
+    setupAuth({ markPasswordChanged: markPasswordChangedMock })
+    const mockChangePw = vi.fn().mockResolvedValue(undefined)
+    vi.mocked(useMutation).mockReturnValue(mockChangePw as any)
+
+    const ChangePasswordComponent = (Route as any).options.component
+    render(<ChangePasswordComponent />)
+
+    fireEvent.change(screen.getByLabelText('password.current'), {
+      target: { value: 'oldPass1' },
+    })
+    fireEvent.change(screen.getByLabelText('password.new'), {
+      target: { value: 'newPass2' },
+    })
+    fireEvent.change(screen.getByLabelText('password.confirm'), {
+      target: { value: 'newPass2' },
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: 'password.submit' }))
+
+    await waitFor(() => {
+      expect(markPasswordChangedMock).toHaveBeenCalled()
+    })
+  })
 })

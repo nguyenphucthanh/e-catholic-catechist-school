@@ -35,6 +35,8 @@ export const login = mutation({
     }
     await ctx.db.patch('accounts', account._id, updates)
 
+    const mustChangePassword = account.mustChangePassword ?? false
+
     if (account.accountType === 'catechist') {
       const catechist = await ctx.db.get(
         'catechists',
@@ -48,6 +50,7 @@ export const login = mutation({
         memberId: catechist.memberId,
         fullName: catechist.fullName,
         role: catechist.role,
+        mustChangePassword,
       }
     } else {
       const student = await ctx.db.get(
@@ -62,6 +65,7 @@ export const login = mutation({
         memberId: student.studentCode,
         fullName: student.fullName,
         role: null,
+        mustChangePassword,
       }
     }
   },
@@ -89,7 +93,10 @@ export const changePassword = mutation({
     }
 
     const newHash = await hashPassword(newPassword)
-    await ctx.db.patch('accounts', account._id, { passwordHash: newHash })
+    await ctx.db.patch('accounts', account._id, {
+      passwordHash: newHash,
+      mustChangePassword: false,
+    })
   },
 })
 

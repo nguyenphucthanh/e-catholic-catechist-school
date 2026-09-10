@@ -31,11 +31,15 @@ function AuthConsumer() {
     logout,
     loginAs,
     returnToAdmin,
+    markPasswordChanged,
   } = useAuth()
   return (
     <div>
       <span data-testid="hydrated">{String(isHydrated)}</span>
       <span data-testid="user">{user ? user.fullName : 'no-user'}</span>
+      <span data-testid="must-change-pw">
+        {String(user?.mustChangePassword)}
+      </span>
       <span data-testid="impersonator">
         {impersonatorAdmin ? impersonatorAdmin.fullName : 'no-impersonator'}
       </span>
@@ -48,6 +52,7 @@ function AuthConsumer() {
             fullName: 'Nguyễn Văn A',
             accountType: 'catechist',
             role: 'admin',
+            mustChangePassword: true,
           })
         }
       >
@@ -56,6 +61,9 @@ function AuthConsumer() {
       <button onClick={logout}>logout</button>
       <button onClick={() => loginAs?.(TARGET_USER)}>loginAs</button>
       <button onClick={() => returnToAdmin?.()}>returnToAdmin</button>
+      <button onClick={() => markPasswordChanged?.()}>
+        markPasswordChanged
+      </button>
     </div>
   )
 }
@@ -331,6 +339,50 @@ describe('AuthProvider / useAuth', () => {
         'no-impersonator',
       )
       expect(localStorage.getItem('giaoly_impersonator')).toBeNull()
+    })
+
+    test('updates mustChangePassword to false when markPasswordChanged is called', () => {
+      render(
+        <AuthProvider>
+          <AuthConsumer />
+        </AuthProvider>,
+      )
+      act(() => {
+        fireEvent.click(screen.getByRole('button', { name: 'login' }))
+      })
+      expect(screen.getByTestId('must-change-pw').textContent).toBe('true')
+      const storedBefore = JSON.parse(localStorage.getItem('giaoly_auth')!)
+      expect(storedBefore.mustChangePassword).toBe(true)
+
+      act(() => {
+        fireEvent.click(
+          screen.getByRole('button', { name: 'markPasswordChanged' }),
+        )
+      })
+      expect(screen.getByTestId('must-change-pw').textContent).toBe('false')
+      const storedAfter = JSON.parse(localStorage.getItem('giaoly_auth')!)
+      expect(storedAfter.mustChangePassword).toBe(false)
+    })
+
+    test('preserves mustChangePassword flag when reading stored user from localStorage', () => {
+      const stored = {
+        userDocId: 'cat1',
+        loginId: 'CAT-GLV0001',
+        memberId: 'GLV0001',
+        fullName: 'Persisted User',
+        accountType: 'catechist',
+        role: 'user',
+        mustChangePassword: true,
+      }
+      localStorage.setItem('giaoly_auth', JSON.stringify(stored))
+
+      render(
+        <AuthProvider>
+          <AuthConsumer />
+        </AuthProvider>,
+      )
+      expect(screen.getByTestId('user').textContent).toBe('Persisted User')
+      expect(screen.getByTestId('must-change-pw').textContent).toBe('true')
     })
   })
 })

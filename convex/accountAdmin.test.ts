@@ -514,6 +514,7 @@ describe('accountAdmin backend functions', () => {
       expect(account?.userRefId).toBe(plainId)
       expect(account?.isActive).toBe(true)
       expect(account?.isDeleted).toBe(false)
+      expect(account?.mustChangePassword).toBe(true)
     })
 
     test('restores soft-deleted account', async () => {
@@ -689,6 +690,7 @@ describe('accountAdmin backend functions', () => {
         password: 'CAT-200',
       })
       expect(loginResult.memberId).toBe('200')
+      expect(loginResult.mustChangePassword).toBe(true)
     })
 
     test('throws for non-admin', async () => {

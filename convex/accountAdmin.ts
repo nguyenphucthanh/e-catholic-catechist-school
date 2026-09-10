@@ -279,6 +279,7 @@ export const grantCatechistAccount = mutation({
           isActive: true,
           passwordHash: hashPassword(loginId),
           lastLoginAt: undefined,
+          mustChangePassword: true,
         })
         return { username: loginId, password: loginId }
       }
@@ -291,6 +292,7 @@ export const grantCatechistAccount = mutation({
       accountType: 'catechist',
       userRefId: args.catechistId,
       isActive: true,
+      mustChangePassword: true,
       createdAt: Date.now(),
       isDeleted: false,
     })
@@ -324,6 +326,7 @@ export const grantStudentAccount = mutation({
           isActive: true,
           passwordHash: hashPassword(loginId),
           lastLoginAt: undefined,
+          mustChangePassword: true,
         })
         return { username: loginId, password: loginId }
       }
@@ -336,6 +339,7 @@ export const grantStudentAccount = mutation({
       accountType: 'student',
       userRefId: args.studentId,
       isActive: true,
+      mustChangePassword: true,
       createdAt: Date.now(),
       isDeleted: false,
     })
@@ -358,6 +362,7 @@ export const resetPassword = mutation({
 
     await ctx.db.patch('accounts', args.accountId, {
       passwordHash: hashPassword(account.loginId),
+      mustChangePassword: true,
     })
     return { username: account.loginId, password: account.loginId }
   },
@@ -407,6 +412,7 @@ export const bulkGrantCatechistAccounts = mutation({
             isActive: true,
             passwordHash: hashPassword(loginId),
             lastLoginAt: undefined,
+            mustChangePassword: true,
           })
         }
         continue
@@ -418,6 +424,7 @@ export const bulkGrantCatechistAccounts = mutation({
         accountType: 'catechist',
         userRefId: catechistId,
         isActive: true,
+        mustChangePassword: true,
         createdAt: Date.now(),
         isDeleted: false,
       })
@@ -450,6 +457,7 @@ export const bulkGrantStudentAccounts = mutation({
             isActive: true,
             passwordHash: hashPassword(loginId),
             lastLoginAt: undefined,
+            mustChangePassword: true,
           })
         }
         continue
@@ -461,6 +469,7 @@ export const bulkGrantStudentAccounts = mutation({
         accountType: 'student',
         userRefId: studentId,
         isActive: true,
+        mustChangePassword: true,
         createdAt: Date.now(),
         isDeleted: false,
       })
@@ -526,6 +535,7 @@ export const bulkResetPasswords = mutation({
 
       await ctx.db.patch('accounts', accountId, {
         passwordHash: hashPassword(account.loginId),
+        mustChangePassword: true,
       })
     }
   },

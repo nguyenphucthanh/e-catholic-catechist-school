@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useForm } from '@tanstack/react-form'
 import { useMutation } from 'convex/react'
-import { Lock } from 'lucide-react'
+import { AlertCircle, Lock } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { z } from 'zod'
@@ -9,6 +9,7 @@ import { useMemo } from 'react'
 import { api } from '../../../convex/_generated/api'
 import { useAuth } from '~/lib/auth'
 import { PageHeader } from '~/components/page-header'
+import { Alert, AlertDescription, AlertTitle } from '~/components/ui/alert'
 import { Card, CardContent } from '~/components/ui/card'
 import { Input } from '~/components/ui/input'
 import { Button } from '~/components/ui/button'
@@ -21,7 +22,7 @@ export const Route = createFileRoute('/_authenticated/change-password')({
 
 function ChangePasswordPage() {
   const { t } = useTranslation()
-  const { user } = useAuth()
+  const { user, markPasswordChanged } = useAuth()
   const changePasswordMutation = useMutation(api.auth.changePassword)
 
   const passwordSchema = useMemo(
@@ -55,6 +56,7 @@ function ChangePasswordPage() {
           oldPassword: value.currentPassword,
           newPassword: value.newPassword,
         })
+        markPasswordChanged?.()
         toast.success(t('password.success'))
         form.reset()
       } catch (e) {
@@ -70,6 +72,14 @@ function ChangePasswordPage() {
         title={t('password.title')}
         subtitle={t('password.subtitle')}
       />
+
+      {user?.mustChangePassword && (
+        <Alert variant="destructive">
+          <AlertCircle />
+          <AlertTitle>{t('password.force.title')}</AlertTitle>
+          <AlertDescription>{t('password.force.description')}</AlertDescription>
+        </Alert>
+      )}
 
       <Card>
         <CardContent>

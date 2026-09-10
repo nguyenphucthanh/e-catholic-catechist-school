@@ -1,6 +1,6 @@
 import { describe, expect, test, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
-import { useMatches, useNavigate } from '@tanstack/react-router'
+import { useLocation, useMatches, useNavigate } from '@tanstack/react-router'
 import { Route } from './_authenticated'
 import { useAuth } from '~/lib/auth'
 
@@ -12,6 +12,11 @@ vi.mock('~/components/app-sidebar', () => ({
       <button onClick={onLogout}>LogoutButton</button>
     </div>
   ),
+}))
+
+vi.mock('~/components/custom/change-password-dialog', () => ({
+  ChangePasswordDialog: ({ open }: any) =>
+    open ? <div data-testid="change-password-dialog" /> : null,
 }))
 
 describe('AuthenticatedLayout component', () => {
@@ -245,5 +250,99 @@ describe('AuthenticatedLayout component', () => {
     const LayoutComponent = (Route as any).options.component
     expect(() => render(<LayoutComponent />)).not.toThrow()
     expect(screen.getByTestId('outlet')).toBeInTheDocument()
+  })
+
+  test('redirects catechist to /change-password when mustChangePassword is true and not on change-password page', () => {
+    const navigateMock = vi.fn()
+    vi.mocked(useNavigate).mockReturnValue(navigateMock)
+    vi.mocked(useLocation).mockReturnValue({ pathname: '/dashboard' } as any)
+
+    const mockUser = {
+      _id: 'user123',
+      memberId: 'GLV0001',
+      fullName: 'Nguyễn Văn A',
+      accountType: 'catechist',
+      role: 'user',
+      mustChangePassword: true,
+    } as any
+
+    vi.mocked(useAuth).mockReturnValue({
+      login: vi.fn(),
+      logout: vi.fn(),
+      user: mockUser,
+    })
+
+    const LayoutComponent = (Route as any).options.component
+    const { container } = render(<LayoutComponent />)
+
+    expect(navigateMock).toHaveBeenCalledWith({
+      to: '/change-password',
+      replace: true,
+    })
+    expect(container).toBeEmptyDOMElement()
+  })
+
+  test('does not redirect catechist when already on /change-password page', () => {
+    const navigateMock = vi.fn()
+    vi.mocked(useNavigate).mockReturnValue(navigateMock)
+    vi.mocked(useLocation).mockReturnValue({
+      pathname: '/change-password',
+    } as any)
+
+    const mockUser = {
+      _id: 'user123',
+      memberId: 'GLV0001',
+      fullName: 'Nguyễn Văn A',
+      accountType: 'catechist',
+      role: 'user',
+      mustChangePassword: true,
+    } as any
+
+    vi.mocked(useAuth).mockReturnValue({
+      login: vi.fn(),
+      logout: vi.fn(),
+      user: mockUser,
+    })
+
+    const LayoutComponent = (Route as any).options.component
+    render(<LayoutComponent />)
+
+    expect(navigateMock).not.toHaveBeenCalledWith({
+      to: '/change-password',
+      replace: true,
+    })
+    expect(screen.getByTestId('outlet')).toBeInTheDocument()
+  })
+
+  test('renders student change password dialog when mustChangePassword is true for student', () => {
+    const navigateMock = vi.fn()
+    vi.mocked(useNavigate).mockReturnValue(navigateMock)
+    vi.mocked(useLocation).mockReturnValue({
+      pathname: '/my-attendance',
+    } as any)
+
+    const mockStudent = {
+      _id: 'student123',
+      memberId: 'HS0001',
+      fullName: 'Trần Thị B',
+      accountType: 'student',
+      role: null,
+      mustChangePassword: true,
+    } as any
+
+    vi.mocked(useAuth).mockReturnValue({
+      login: vi.fn(),
+      logout: vi.fn(),
+      user: mockStudent,
+    })
+
+    const LayoutComponent = (Route as any).options.component
+    render(<LayoutComponent />)
+
+    expect(navigateMock).not.toHaveBeenCalledWith({
+      to: '/change-password',
+      replace: true,
+    })
+    expect(screen.getByTestId('change-password-dialog')).toBeInTheDocument()
   })
 })

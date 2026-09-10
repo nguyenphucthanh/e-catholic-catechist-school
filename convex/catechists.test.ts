@@ -1155,6 +1155,7 @@ describe('auto-account creation', () => {
     expect(account?.isDeleted).toBe(false)
     // passwordHash must be a bcrypt hash (starts with $2)
     expect(account?.passwordHash).toMatch(/^\$2/)
+    expect(account?.mustChangePassword).toBe(true)
   })
 
   test('create respects CATECHIST_ACCOUNT_PREFIX env var', async () => {

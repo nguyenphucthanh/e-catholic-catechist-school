@@ -4136,6 +4136,7 @@ describe('auto-account creation for students', () => {
     expect(account?.isActive).toBe(true)
     expect(account?.isDeleted).toBe(false)
     expect(account?.passwordHash).toMatch(/^\$2/) // bcrypt
+    expect(account?.mustChangePassword).toBe(true)
   })
 
   test('create respects STUDENT_ACCOUNT_PREFIX env var', async () => {

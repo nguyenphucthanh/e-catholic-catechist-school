@@ -585,6 +585,7 @@ export default defineSchema({
     accountType: v.union(v.literal('catechist'), v.literal('student')),
     userRefId: v.union(v.id('catechists'), v.id('students')), // polymorphic; type determined by accountType
     isActive: v.boolean(),
+    mustChangePassword: v.optional(v.boolean()),
     lastLoginAt: v.optional(v.number()), // Unix ms
     createdAt: v.number(), // Unix ms; immutable
     isDeleted: v.boolean(), // soft delete — never hard-delete, preserves relationships

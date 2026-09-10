@@ -3,12 +3,14 @@ import {
   Link,
   Outlet,
   createFileRoute,
+  useLocation,
   useMatches,
   useNavigate,
 } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { FileExclamationPoint, UserCog } from 'lucide-react'
 import { version } from '../../package.json'
+import { ChangePasswordDialog } from '~/components/custom/change-password-dialog'
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -68,9 +70,44 @@ function AuthenticatedLayout() {
     redirectTo: '/login',
   })
 
+  const location = useLocation()
+  const isCatechist = user?.accountType === 'catechist'
+  const isStudent = user?.accountType === 'student'
+  const mustChangePassword = !!user?.mustChangePassword
+  const isPasswordChangePage = location.pathname === '/change-password'
+
+  const [studentPromptDismissed, setStudentPromptDismissed] =
+    React.useState(false)
+
+  React.useEffect(() => {
+    if (
+      ready &&
+      user &&
+      mustChangePassword &&
+      isCatechist &&
+      !isPasswordChangePage
+    ) {
+      void navigate({ to: '/change-password', replace: true })
+    }
+  }, [
+    ready,
+    user,
+    mustChangePassword,
+    isCatechist,
+    isPasswordChangePage,
+    navigate,
+  ])
+
   if (!ready || !user) {
     return null
   }
+
+  if (mustChangePassword && isCatechist && !isPasswordChangePage) {
+    return null
+  }
+
+  const showStudentPrompt =
+    isStudent && mustChangePassword && !studentPromptDismissed
 
   const crumbs = matches
     .filter((match) => match.staticData.crumbs || match.staticData.crumb)
@@ -165,6 +202,16 @@ function AuthenticatedLayout() {
               ))}
             </BreadcrumbList>
           </Breadcrumb>
+          {showStudentPrompt && (
+            <ChangePasswordDialog
+              open={showStudentPrompt}
+              onOpenChange={(open) => {
+                if (!open) {
+                  setStudentPromptDismissed(true)
+                }
+              }}
+            />
+          )}
           <Outlet />
           <footer className="mt-auto pt-6 pb-2 text-center text-xs text-muted-foreground border-t border-border/50 dark:border-border/10">
             eCCS v{version}

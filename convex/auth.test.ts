@@ -46,6 +46,42 @@ describe('auth backend functions', () => {
     expect(result.memberId).toBe('GLV0001')
     expect(result.fullName).toBe('Nguyễn Văn A')
     expect(result.role).toBe('user')
+    expect(result.mustChangePassword).toBe(false)
+  })
+
+  test('login returns mustChangePassword: true when flag is set on account', async () => {
+    const t = convexTest(schema, modules)
+
+    const catechistId = await t.run(async (ctx) => {
+      return ctx.db.insert('catechists', {
+        memberId: 'GLV9999',
+        fullName: 'Nguyễn Văn Test',
+        role: 'user',
+        isActive: true,
+        isDeleted: false,
+      })
+    })
+
+    const hash = await hashPassword('default123')
+    await t.run(async (ctx) => {
+      await ctx.db.insert('accounts', {
+        loginId: 'GLV9999',
+        passwordHash: hash,
+        accountType: 'catechist',
+        userRefId: catechistId,
+        mustChangePassword: true,
+        isActive: true,
+        createdAt: Date.now(),
+        isDeleted: false,
+      })
+    })
+
+    const result = await t.mutation(api.auth.login, {
+      loginId: 'GLV9999',
+      password: 'default123',
+    })
+
+    expect(result.mustChangePassword).toBe(true)
   })
 
   test('login succeeds for a student account and returns student fields', async () => {
@@ -186,6 +222,7 @@ describe('auth backend functions', () => {
         passwordHash: hash,
         accountType: 'catechist',
         userRefId: catechistId,
+        mustChangePassword: true,
         isActive: true,
         createdAt: Date.now(),
         isDeleted: false,
@@ -199,12 +236,21 @@ describe('auth backend functions', () => {
       newPassword: 'newPass2',
     })
 
+    const account = await t.run(async (ctx) => {
+      return ctx.db
+        .query('accounts')
+        .withIndex('by_login_id', (q) => q.eq('loginId', 'GLV0003'))
+        .unique()
+    })
+    expect(account?.mustChangePassword).toBe(false)
+
     // Login with new password should succeed
     const result = await t.mutation(api.auth.login, {
       loginId: 'GLV0003',
       password: 'newPass2',
     })
     expect(result.memberId).toBe('GLV0003')
+    expect(result.mustChangePassword).toBe(false)
   })
 
   test('changePassword throws for wrong old password', async () => {

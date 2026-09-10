@@ -10,6 +10,7 @@ export type AuthUser = {
   fullName: string
   accountType: 'catechist' | 'student'
   role: 'admin' | 'user' | null
+  mustChangePassword?: boolean
 }
 
 type AuthContextValue = {
@@ -20,6 +21,7 @@ type AuthContextValue = {
   logout: () => void
   loginAs?: (target: AuthUser) => void
   returnToAdmin?: () => void
+  markPasswordChanged?: () => void
 }
 
 const AuthContext = React.createContext<AuthContextValue | null>(null)
@@ -33,7 +35,9 @@ function isValidStoredUser(value: unknown): value is AuthUser {
     typeof u.memberId === 'string' &&
     typeof u.fullName === 'string' &&
     (u.accountType === 'catechist' || u.accountType === 'student') &&
-    (u.role === 'admin' || u.role === 'user' || u.role === null)
+    (u.role === 'admin' || u.role === 'user' || u.role === null) &&
+    (u.mustChangePassword === undefined ||
+      typeof u.mustChangePassword === 'boolean')
   )
 }
 
@@ -76,6 +80,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem(IMPERSONATOR_KEY)
   }, [])
 
+  const markPasswordChanged = React.useCallback(() => {
+    setUser((prev) => {
+      if (!prev) return null
+      const updated = { ...prev, mustChangePassword: false }
+      localStorage.setItem(AUTH_KEY, JSON.stringify(updated))
+      return updated
+    })
+  }, [])
+
   const loginAs = React.useCallback(
     (target: AuthUser) => {
       if (!user) return
@@ -105,6 +118,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         logout,
         loginAs,
         returnToAdmin,
+        markPasswordChanged,
       }}
     >
       {children}

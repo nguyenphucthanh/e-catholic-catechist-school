@@ -61,6 +61,7 @@ export async function createStudentWithAccount(
     passwordHash: passwordHash ?? hashPassword(loginId),
     accountType: 'student',
     userRefId: studentId,
+    mustChangePassword: true,
     isActive: true,
     createdAt: Date.now(),
     isDeleted: false,
