@@ -132,6 +132,9 @@ export interface DataTableProps<TData extends RowData> {
 
   // Custom text to show when no results are found.
   emptyText?: string
+
+  // Optional sub-row renderer under each row
+  renderSubRow?: (row: Row<DataTableFeatures, TData>) => React.ReactNode
 }
 
 export function DataTable<TData extends RowData>({
@@ -160,6 +163,7 @@ export function DataTable<TData extends RowData>({
   onLoadMore,
   isLoading = false,
   emptyText,
+  renderSubRow,
 }: DataTableProps<TData>) {
   // Local state fallbacks if properties are not controlled
   const [localSorting, setLocalSorting] = React.useState<SortingState>([])
@@ -369,48 +373,62 @@ export function DataTable<TData extends RowData>({
               ))
             ) : table.getRowModel().rows.length ? (
               table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && 'selected'}
-                  className={getRowClassName?.(row)}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {cell.getIsGrouped() ? (
-                        <>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={row.getToggleExpandedHandler()}
-                            className="p-0 h-auto font-bold flex items-center gap-2"
-                          >
-                            {row.getIsExpanded() ? (
-                              <ChevronDown className="size-4" />
-                            ) : (
-                              <ChevronRight className="size-4" />
-                            )}
-                            {flexRender(
+                <React.Fragment key={row.id}>
+                  <TableRow
+                    data-state={row.getIsSelected() && 'selected'}
+                    className={getRowClassName?.(row)}
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id}>
+                        {cell.getIsGrouped() ? (
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={row.getToggleExpandedHandler()}
+                              className="p-0 h-auto font-bold flex items-center gap-2"
+                            >
+                              {row.getIsExpanded() ? (
+                                <ChevronDown className="size-4" />
+                              ) : (
+                                <ChevronRight className="size-4" />
+                              )}
+                              {flexRender(
+                                cell.column.columnDef.cell,
+                                cell.getContext(),
+                              )}
+                              <span>({row.subRows.length})</span>
+                            </Button>
+                          </>
+                        ) : cell.getIsAggregated() ? (
+                          flexRender(
+                            cell.column.columnDef.aggregatedCell ??
                               cell.column.columnDef.cell,
-                              cell.getContext(),
-                            )}
-                            <span>({row.subRows.length})</span>
-                          </Button>
-                        </>
-                      ) : cell.getIsAggregated() ? (
-                        flexRender(
-                          cell.column.columnDef.aggregatedCell ??
+                            cell.getContext(),
+                          )
+                        ) : cell.getIsPlaceholder() ? null : (
+                          flexRender(
                             cell.column.columnDef.cell,
-                          cell.getContext(),
-                        )
-                      ) : cell.getIsPlaceholder() ? null : (
-                        flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext(),
-                        )
-                      )}
-                    </TableCell>
-                  ))}
-                </TableRow>
+                            cell.getContext(),
+                          )
+                        )}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                  {renderSubRow && (
+                    <TableRow
+                      key={`${row.id}-subrow`}
+                      className="bg-muted/20 hover:bg-muted/30 border-b"
+                    >
+                      <TableCell
+                        colSpan={row.getVisibleCells().length}
+                        className="py-2.5 px-4"
+                      >
+                        {renderSubRow(row)}
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </React.Fragment>
               ))
             ) : (
               <TableRow>

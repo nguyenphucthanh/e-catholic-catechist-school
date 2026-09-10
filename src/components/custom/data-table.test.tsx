@@ -243,4 +243,23 @@ describe('DataTable component', () => {
     expect(adminRow).toHaveClass('bg-red-50')
     expect(userRow).not.toHaveClass('bg-red-50')
   })
+
+  test('renders sub-rows when renderSubRow is provided', () => {
+    render(
+      <DataTable
+        columns={columns}
+        data={testData}
+        renderSubRow={(row) => (
+          <div data-testid={`subrow-${row.original.id}`}>
+            Details for {row.original.name}
+          </div>
+        )}
+      />,
+    )
+
+    expect(screen.getByTestId('subrow-1')).toHaveTextContent(
+      'Details for Alice',
+    )
+    expect(screen.getByTestId('subrow-2')).toHaveTextContent('Details for Bob')
+  })
 })

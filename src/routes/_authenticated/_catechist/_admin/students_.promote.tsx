@@ -1,7 +1,15 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useMutation, useQuery } from 'convex/react'
 import { useTranslation } from 'react-i18next'
-import { ArrowRightLeft } from 'lucide-react'
+import {
+  AlertTriangle,
+  ArrowRightLeft,
+  CheckCheck,
+  CheckCircle2,
+  HelpCircle,
+  MessageSquare,
+  XCircle,
+} from 'lucide-react'
 import * as React from 'react'
 import { toast } from 'sonner'
 import { api } from '../../../../../convex/_generated/api'
@@ -41,6 +49,81 @@ type RosterRow = {
   saintName: string | undefined
   gender: 'male' | 'female' | undefined
   alreadyEnrolledInTargetYear: boolean
+  annualResult?: {
+    _id: Id<'annualResults'>
+    conductGrade?: 'excellent' | 'good' | 'average' | 'below_average' | 'poor'
+    remark?: string
+    isCompleted?: boolean
+  } | null
+}
+
+const MORALITY_TEXT_COLOR: Record<string, string> = {
+  excellent: 'text-emerald-700 dark:text-emerald-300',
+  good: 'text-blue-700 dark:text-blue-300',
+  average: 'text-amber-700 dark:text-amber-300',
+  below_average: 'text-orange-700 dark:text-orange-300',
+  poor: 'text-rose-700 dark:text-rose-300',
+}
+
+function StudentEvaluationSubRow({ row }: { row: RosterRow }) {
+  const { t } = useTranslation()
+  const { annualResult } = row
+
+  return (
+    <div className="flex flex-wrap items-center gap-3 pl-8 text-xs">
+      <span className="font-medium text-muted-foreground">
+        {t('students.promote.eval.title')}
+      </span>
+
+      {annualResult?.isCompleted === true ? (
+        <Badge
+          variant="outline"
+          className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30 flex items-center gap-1 font-medium"
+        >
+          <CheckCircle2 className="size-3" />
+          {t('students.promote.eval.passed')}
+        </Badge>
+      ) : annualResult?.isCompleted === false ? (
+        <Badge
+          variant="outline"
+          className="bg-destructive/10 text-destructive border-destructive/30 flex items-center gap-1 font-medium"
+        >
+          <XCircle className="size-3" />
+          {t('students.promote.eval.failed')}
+        </Badge>
+      ) : (
+        <Badge
+          variant="outline"
+          className="text-muted-foreground flex items-center gap-1 font-normal"
+        >
+          <HelpCircle className="size-3" />
+          {t('students.promote.eval.notEvaluated')}
+        </Badge>
+      )}
+
+      {annualResult?.conductGrade && (
+        <Badge variant="outline" className="border-border/60">
+          <span className="text-muted-foreground mr-1">
+            {t('students.promote.eval.conduct')}:
+          </span>
+          <span
+            className={
+              MORALITY_TEXT_COLOR[annualResult.conductGrade] ?? 'font-medium'
+            }
+          >
+            {t(`evaluations.morality.${annualResult.conductGrade}`)}
+          </span>
+        </Badge>
+      )}
+
+      {annualResult?.remark && (
+        <div className="flex items-center gap-1 text-muted-foreground italic truncate max-w-md">
+          <MessageSquare className="size-3 shrink-0 text-muted-foreground/60" />
+          <span className="truncate">"{annualResult.remark}"</span>
+        </div>
+      )}
+    </div>
+  )
 }
 
 function PromoteStudentsPage() {
@@ -116,13 +199,43 @@ function PromoteStudentsPage() {
     [rowSelection],
   )
 
+  const handleSelectPassedOnly = () => {
+    if (!roster) return
+    const nextSelection: RowSelectionState = {}
+    for (const r of roster) {
+      if (
+        !r.alreadyEnrolledInTargetYear &&
+        r.annualResult?.isCompleted === true
+      ) {
+        nextSelection[r.studentId] = true
+      }
+    }
+    setRowSelection(nextSelection)
+  }
+
+  const hasIncompleteSelected = React.useMemo(() => {
+    if (!roster) return false
+    return roster.some(
+      (r) =>
+        Boolean(
+          (rowSelection as Record<string, boolean | undefined>)[r.studentId],
+        ) && r.annualResult?.isCompleted === false,
+    )
+  }, [roster, rowSelection])
+
   const handleSubmit = async () => {
     if (!requesterId || !roster) return
     if (!targetClassYearId) {
       toast.error(t('students.promote.noTargetClass'))
       return
     }
-    const selectedStudentIds = roster.map((r) => r.studentId)
+    const selectedStudentIds = roster
+      .filter((r) =>
+        Boolean(
+          (rowSelection as Record<string, boolean | undefined>)[r.studentId],
+        ),
+      )
+      .map((r) => r.studentId)
     if (selectedStudentIds.length === 0) {
       toast.error(t('students.promote.noSelection'))
       return
@@ -350,21 +463,46 @@ function PromoteStudentsPage() {
             {t('students.promote.rosterEmpty')}
           </div>
         ) : (
-          <DataTable
-            columns={columns}
-            data={roster ?? []}
-            isLoading={roster === undefined}
-            disableSearch
-            rowSelection={rowSelection}
-            onRowSelectionChange={setRowSelection}
-            getRowId={(row) => row.studentId}
-          />
+          <>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleSelectPassedOnly}
+                disabled={!roster || roster.length === 0}
+              >
+                <CheckCheck className="size-4 mr-1.5" />
+                {t('students.promote.selectPassedOnly')}
+              </Button>
+            </div>
+            <DataTable
+              columns={columns}
+              data={roster ?? []}
+              isLoading={roster === undefined}
+              disableSearch
+              rowSelection={rowSelection}
+              onRowSelectionChange={setRowSelection}
+              getRowId={(row) => row.studentId}
+              renderSubRow={(row) => (
+                <StudentEvaluationSubRow row={row.original} />
+              )}
+            />
+          </>
         )}
 
-        <div className="flex items-center justify-between border-t pt-4">
-          <span className="text-sm text-muted-foreground">
-            {t('students.promote.selectedCount', { count: selectedCount })}
-          </span>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-t pt-4">
+          <div className="flex flex-col gap-1">
+            <span className="text-sm text-muted-foreground">
+              {t('students.promote.selectedCount', { count: selectedCount })}
+            </span>
+            {hasIncompleteSelected && (
+              <div className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
+                <AlertTriangle className="size-3.5 shrink-0" />
+                <span>{t('students.promote.warningIncompleteSelected')}</span>
+              </div>
+            )}
+          </div>
           <Button
             onClick={handleSubmit}
             disabled={!targetClassYearId || selectedCount === 0 || submitting}

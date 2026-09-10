@@ -3968,6 +3968,95 @@ describe('getEligibleForTransfer query', () => {
     expect(row?.alreadyEnrolledInTargetYear).toBe(true)
   })
 
+  test('includes annualResult when present, null when absent or deleted', async () => {
+    const t = convexTest(schema, modules)
+    const { adminId, sourceClassYearId, targetAcademicYearId } =
+      await setupTransferFixture(t)
+
+    const studentWithResultId = await t.mutation(api.students.create, {
+      requesterId: adminId,
+      fullName: 'Student With Evaluation',
+    })
+    const studentNoResultId = await t.mutation(api.students.create, {
+      requesterId: adminId,
+      fullName: 'Student Without Evaluation',
+    })
+    const studentDeletedResultId = await t.mutation(api.students.create, {
+      requesterId: adminId,
+      fullName: 'Student With Deleted Evaluation',
+    })
+
+    let scWithResultId: any
+    let scDeletedResultId: any
+
+    await t.run(async (ctx) => {
+      scWithResultId = await ctx.db.insert('studentClasses', {
+        studentId: studentWithResultId,
+        classYearId: sourceClassYearId,
+        isPrimaryClass: true,
+        enrolledDate: '2023-09-01',
+        status: 'active',
+        isDeleted: false,
+      })
+      await ctx.db.insert('studentClasses', {
+        studentId: studentNoResultId,
+        classYearId: sourceClassYearId,
+        isPrimaryClass: true,
+        enrolledDate: '2023-09-01',
+        status: 'active',
+        isDeleted: false,
+      })
+      scDeletedResultId = await ctx.db.insert('studentClasses', {
+        studentId: studentDeletedResultId,
+        classYearId: sourceClassYearId,
+        isPrimaryClass: true,
+        enrolledDate: '2023-09-01',
+        status: 'active',
+        isDeleted: false,
+      })
+
+      await ctx.db.insert('annualResults', {
+        studentClassId: scWithResultId,
+        conductGrade: 'excellent',
+        remark: 'Chăm chỉ và tích cực',
+        isCompleted: true,
+        isDeleted: false,
+      })
+
+      await ctx.db.insert('annualResults', {
+        studentClassId: scDeletedResultId,
+        conductGrade: 'poor',
+        remark: 'Đã xóa',
+        isCompleted: false,
+        isDeleted: true,
+      })
+    })
+
+    const result = await t.query(api.students.getEligibleForTransfer, {
+      requesterId: adminId,
+      sourceClassYearId,
+      targetAcademicYearId,
+    })
+
+    const rowWithResult = result.find(
+      (r) => r.studentId === studentWithResultId,
+    )
+    expect(rowWithResult?.annualResult).toEqual({
+      _id: expect.any(String),
+      conductGrade: 'excellent',
+      remark: 'Chăm chỉ và tích cực',
+      isCompleted: true,
+    })
+
+    const rowNoResult = result.find((r) => r.studentId === studentNoResultId)
+    expect(rowNoResult?.annualResult).toBeNull()
+
+    const rowDeletedResult = result.find(
+      (r) => r.studentId === studentDeletedResultId,
+    )
+    expect(rowDeletedResult?.annualResult).toBeNull()
+  })
+
   test('throws on a deleted or non-existent sourceClassYearId', async () => {
     const t = convexTest(schema, modules)
     const { adminId, sourceClassYearId, targetAcademicYearId } =

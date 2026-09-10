@@ -1955,6 +1955,23 @@ export const getEligibleForTransfer = query({
           const student = await ctx.db.get('students', enrollment.studentId)
           if (!student || student.isDeleted) return null
 
+          const annualResultRecord = await ctx.db
+            .query('annualResults')
+            .withIndex('by_student_class_id', (q) =>
+              q.eq('studentClassId', enrollment._id),
+            )
+            .first()
+
+          const annualResult =
+            annualResultRecord && !annualResultRecord.isDeleted
+              ? {
+                  _id: annualResultRecord._id,
+                  conductGrade: annualResultRecord.conductGrade,
+                  remark: annualResultRecord.remark,
+                  isCompleted: annualResultRecord.isCompleted,
+                }
+              : null
+
           return {
             studentClassId: enrollment._id,
             studentId: student._id,
@@ -1963,6 +1980,7 @@ export const getEligibleForTransfer = query({
             saintName: student.saintName,
             gender: student.gender,
             alreadyEnrolledInTargetYear: conflictedStudentIds.has(student._id),
+            annualResult,
           }
         }),
       )
